@@ -1,9 +1,8 @@
-# Axis clusters
 ## A cohesin-independent mechanism modulates recombination activity along meiotic chromosomes
 
-The paper will soon be available at bioRxiv.
+This repository contains the code needed to create the figures in this paper. The paper will soon be available at bioRxiv.
 
 
-## License
+### License
 
 This project is licensed under the terms of the MIT license. See [LICENSE](LICENSE) file for details.
