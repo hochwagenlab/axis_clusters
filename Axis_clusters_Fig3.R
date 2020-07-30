@@ -31,7 +31,7 @@ clusters = rtracklayer::import.bed('clusters_joined.bed')
 deserts = rtracklayer::import.bed('deserts_joined.bed')
 
 # A: H3
-h3 = import_bedGraph('H3-WT-44-105-445-Reps-SK1Yue-PM_B3W3_MACS2_FE.bdg.gz')
+h3 = import_bedGraph('H3_Zhu2015-SK1Yue-PM_B3-MACS2_FE.bdg')
 genAvg <- hwglabr2::average_chr_signal(h3)$genome_avrg
 h3$score <- h3$score/genAvg
 
