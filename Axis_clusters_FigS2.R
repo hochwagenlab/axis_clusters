@@ -8,8 +8,77 @@ library(regioneR)
 library(hwglabr2)
 library(EnrichedHeatmap)
 library(ggplot2)
+
+#----------------------------------------------------------------#
+# Figure S2 A-B                                                  #
+#----------------------------------------------------------------#
+# Make 5kb tiles, drop the last tile per chromosomes (because not = 5000)
+tilesize=5000
+genome_info <- hwglabr2::get_chr_coordinates(genome = 'SK1Yue')
+genome_tiles <- GenomicRanges::tileGenome(GenomeInfoDb::seqlengths(genome_info),
+                                          tilewidth=tilesize,
+                                          cut.last.tile.in.chrom=TRUE)
+genome_tilemidpoints = genome_tiles[width(genome_tiles)==tilesize]
+midpoint <- floor(width(genome_tilemidpoints) / 2)
+start(genome_tilemidpoints) <- start(genome_tilemidpoints) + midpoint
+end(genome_tilemidpoints) <- start(genome_tilemidpoints)
+
+# cluster density
+clusters = rtracklayer::import.bed('clusters_joined.bed')
+score(clusters) = 1.0
+clusterdensity <- normalizeToMatrix(signal = clusters, target = genome_tilemidpoints, value_column = "score",
+                                    extend = c(tilesize/2-1,tilesize/2), mean_mode = "coverage", w = 1,background = NA)
+mcols(genome_tilemidpoints)['clusterdensity'] <- rowSums(data.frame(clusterdensity),na.rm = T)/ncol(data.frame(clusterdensity))
+
+# coding density
+gff = hwglabr2::get_gff('SK1Yue')
+gff = granges(gff[gff$type=='gene'])
+score(gff) = 1
+coding <- normalizeToMatrix(gff, genome_tilemidpoints, value_column = "score",
+                            extend = c(tilesize/2-1,tilesize/2), mean_mode = "coverage",
+                            w = 1,background=NA)
+mcols(genome_tilemidpoints)['count'] <- rowSums(data.frame(coding),na.rm = T)
+mcols(genome_tilemidpoints)['codingdensity'] <- rowSums(data.frame(coding),na.rm = T)/ncol(data.frame(coding))
+
+temp = genome_tilemidpoints
+temp$clusterdensity = round(temp$clusterdensity)
+
+# remove small chromosomes and test chr
+testchr = 'chrIX'
+largechrclusters = temp[seqnames(temp)!='chrI']
+largechrclusters = largechrclusters[seqnames(largechrclusters)!='chrIII']
+largechrclusters = largechrclusters[seqnames(largechrclusters)!='chrVI']
+largechrclustersdf = data.frame(largechrclusters)[,c('clusterdensity','codingdensity')]
+
+
+# Plot feature
+ggplot(largechrclustersdf, aes(x=codingdensity, y=clusterdensity)) + geom_point() +
+  stat_smooth(method="glm", method.args=list(family="binomial"), se=FALSE)
+
+# Logistic regression model
+default_idx = createDataPartition(largechrclustersdf$clusterdensity, p = 0.8, list = FALSE)
+default_trn = largechrclustersdf[default_idx, ]
+default_tst = largechrclustersdf[-default_idx, ]
+
+glm_mod = train(
+  as.factor(clusterdensity) ~ codingdensity,
+  data = default_trn,
+  method = "glm",
+  family = "binomial"
+)
+
+pred.glmModel <- predict(glm_mod, newdata=default_tst, type="prob")
+library(pROC)
+roc.glmModel <- roc(default_tst$clusterdensity, pred.glmModel[,'1'])
+plot(roc.glmModel,col='orange')
+auc.glmModel <- auc(roc.glmModel)
+# Area under the curve: 0.7252
+
+tempdf = data.frame(temp)
+tempm = tempdf[,c('seqnames','clusterdensity','codingdensity')]
+
 #---------------------------------------------------------------#
-# Fig S2 A-B, D-E                                               #
+# Fig S2 C-E, G-H                                               #
 #---------------------------------------------------------------#
 # Divide hotspots into cluster or desert
 clusters = rtracklayer::import.bed('clusters_joined.bed')
@@ -37,10 +106,11 @@ start(hotspots_all) <- start(hotspots_all) + midpoint
 end(hotspots_all) <- start(hotspots_all)
 
 # Put the following files into folder called "clusterdesert_hotspots"
-# A: WT_Hu2015_MNaseSeq-SK1Yue-PM_B3-MACS2_treat_pileup.bdg
-# B: H4K44R_Hu2015_MNaseSeq-SK1Yue-PM_B3-MACS2_treat_pileup.bdg
-# D: Nucleosome_reps-SK1-MACS2_treat_pileup.bdg
-# E: AH9003_MNaseSeq_3h-SK1Yue-PM_B3-MACS2_treat_pileup.bdg
+# C: AH7797_MNaseSeq_0h-SK1Yue-PM_B3-MACS2_treat_pileup.bdg
+# D: WT_Hu2015_MNaseSeq-SK1Yue-PM_B3-MACS2_treat_pileup.bdg
+# E: H4K44R_Hu2015_MNaseSeq-SK1Yue-PM_B3-MACS2_treat_pileup.bdg
+# G: Nucleosome_reps-SK1-MACS2_treat_pileup.bdg
+# H: AH9003_MNaseSeq_3h-SK1Yue-PM_B3-MACS2_treat_pileup.bdg
 
 bedgraphs <- list.files(path="~/Desktop/clusterdesert_hotspots",pattern="MACS2_FE.bdg.gz",recursive=T,full.names=T)
 bedgraphs <- bedgraphs[grep("SK1Yue-PM",bedgraphs)]
@@ -89,7 +159,7 @@ for (i in 1:length(bedgraphs)) {
 }
 
 #---------------------------------------------------------------#
-# Fig S2C                                                       #
+# Fig S2 F                                                      #
 #---------------------------------------------------------------#
 
 clusters = rtracklayer::import.bed('clusters_joined.bed')
@@ -120,7 +190,7 @@ start(hotspots_all) <- start(hotspots_all) + midpoint
 end(hotspots_all) <- start(hotspots_all)
 
 dir.create("hotspots_pdf")
-bedgraphs <- "Nucleosome_reps-SK1-MACS2_treat_pileup.bdg"
+bedgraphs <- "AH9003_MNaseSeq_3h-SK1Yue-PM_B3-MACS2_treat_pileup.bdg"
 
 # function to make heatmap of signal at cluster and desert hotspots
 for (i in 1:length(bedgraphs)) {
@@ -148,7 +218,7 @@ for (i in 1:length(bedgraphs)) {
 }
 
 #---------------------------------------------------------------#
-# Fig S2F-H                                                     #
+# Fig S2I-K                                                     #
 #---------------------------------------------------------------#
 # Divide axis sites into cluster or desert
 clusters = rtracklayer::import.bed('clusters_joined.bed')

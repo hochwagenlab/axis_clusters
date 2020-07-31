@@ -207,6 +207,7 @@ mcols(axis_cluster)['class'] = 'cluster'
 # I: Red1-top2-4-411-498-535-Reps-SK1Yue-PM_B3W3_MACS2_FE.bdg.gz
 # J: Hop1-WT-34C-494-532-Reps-SK1Yue-PM_B3W3_MACS2_FE.bdg.gz
 # K: Hop1-top2-4-34C-497-536-Reps-SK1Yue-PM_B3W3_MACS2_FE.bdg.gz
+# L: AH6639_Hop1_T3-216-226-Reps-SK1Yue-PM_B3W3_MACS2_FE.bdg.gz
 
 bedgraphs <- list.files(path="~/Desktop/clusterdesert/axis",pattern="MACS2_FE.bdg.gz",recursive=T,full.names=T)
 bedgraphs <- bedgraphs[grep("SK1Yue-PM",bedgraphs)]

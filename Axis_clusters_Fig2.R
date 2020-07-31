@@ -44,7 +44,7 @@ rm(hits);rm(overlaps)
 cluster_genesize <- data.frame(Type = 'gene_cluster',Region="cluster",width=width(cluster_gff))
 desert_genesize <- data.frame(Type = 'gene_desert',Region="desert",width=width(deserts_gff))
 allsize <- rbind(cluster_genesize,desert_genesize)
-p <- ggplot(allsize, aes(x=Region,y=width, group=Region, fill = Region)) + 
+p <- ggplot(allsize, aes(x=Region,y=width, group=Region, fill = Region)) +
   geom_violin()+scale_fill_brewer(palette="Dark2") +
   ylab("Size (bp)") + xlab("") + geom_boxplot(fill=NA)
 p
@@ -89,7 +89,7 @@ conv_cluster_df = data.frame(intergen='convergent-cluster',region = 'cluster',wi
 tan_cluster_df = data.frame(intergen='tandem-cluster',region = 'cluster',width = width(tan_cluster))
 intergen_all = rbind(conv_cluster_df,conv_desert_df,tan_cluster_df,tan_desert_df,div_cluster_df,div_desert_df)
 
-p <- ggplot(intergen_all, aes(x=intergen, y=width, fill = region)) + 
+p <- ggplot(intergen_all, aes(x=intergen, y=width, fill = region)) +
   geom_violin()+scale_fill_brewer(palette="Dark2") + ylim(0,2000) +
   ylab("Width of intergens") + xlab("") + geom_boxplot(fill=NA)
 p
@@ -120,7 +120,7 @@ gff = hwglabr2::get_gff('SK1Yue')
 gff = granges(gff[gff$type=='gene'])
 score(gff) = 1
 coding <- normalizeToMatrix(gff, genome_tilemidpoints, value_column = "score",
-                            extend = c(tilesize/2-1,tilesize/2), mean_mode = "coverage", 
+                            extend = c(tilesize/2-1,tilesize/2), mean_mode = "coverage",
                             w = 1,background=NA)
 mcols(genome_tilemidpoints)['count'] <- rowSums(data.frame(coding),na.rm = T)
 mcols(genome_tilemidpoints)['codingdensity'] <- rowSums(data.frame(coding),na.rm = T)/ncol(data.frame(coding))
@@ -130,11 +130,11 @@ tempdf = data.frame(temp)
 tempm = tempdf[,c('seqnames','clusterdensity','codingdensity')]
 
 # Plot feature
-featurePlot(x = tempm[, 'codingdensity'], 
-            y = tempm$clusterdensity, 
-            plot = "scatter", 
+featurePlot(x = tempm[, 'codingdensity'],
+            y = tempm$clusterdensity,
+            plot = "scatter",
             type = c("p", "smooth"))
-ggplot(tempm, aes(x=codingdensity, y=clusterdensity)) + geom_point() + 
+ggplot(tempm, aes(x=codingdensity, y=clusterdensity)) + geom_point() +
   stat_smooth(method="glm", method.args=list(family="binomial"), se=FALSE)
 
 # logistic regression test
@@ -227,7 +227,3 @@ p <- ggplot(groups_metaregion, aes(x=Position, y=Mean, group=Data, fill=Data,col
                      labels = c('upstream','downstream'))
 p <- p + geom_ribbon(aes(ymin = Lower, ymax = Upper), alpha=0.3, color=NA) + geom_line()
 p
-
-
-
-
